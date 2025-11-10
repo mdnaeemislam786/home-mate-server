@@ -52,6 +52,13 @@ async function run() {
       const result = await servicesCollection.find().sort({rating: 'descending'}).limit(6).toArray();
       res.send(result);
     });
+    // get my booking data by email
+    app.post('/my-booking', async (req, res) => {
+      const { email } = req.body;
+      const result = await servicesCollection.find({ email }).toArray();
+      res.send(result);
+    });
+
 
     await client.db("admin").command({ ping: 1 });
     console.log(" Connected to MongoDB");
