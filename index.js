@@ -41,9 +41,19 @@ async function run() {
         const result = await servicesCollection.find().toArray();
         res.send(result)
     })
+    //Update one data 
+    app.patch('/services/:id', async (req, res) => {
+        const id = req.params;
+        const data = req.body;
+        const objectId = new ObjectId(id);
+        const filter = {_id: objectId};
+        const update= { $set: data}
+        const result = servicesCollection.updateOne(filter, update)
+        res.send(result)
+    })
     //get one services
     app.get('/services/:id', async(req, res) =>{
-        const id = req.params
+        const {id} = req.params
         const result = await servicesCollection.findOne({_id: new ObjectId(id)})
         res.send(result)
     })
@@ -58,7 +68,12 @@ async function run() {
       const result = await servicesCollection.find({ email }).toArray();
       res.send(result);
     });
-
+    // delete data with id 
+    app.delete('/services/:id', async(req, res ) => {
+      const id = req.params
+      const result = await servicesCollection.deleteOne({_id: new ObjectId(id)})
+      res.send(result)
+    }) 
 
     await client.db("admin").command({ ping: 1 });
     console.log(" Connected to MongoDB");
