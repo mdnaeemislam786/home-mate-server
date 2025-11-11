@@ -29,7 +29,10 @@ async function run() {
     await client.connect();
     const db = client.db('HomeMateDB')
     const servicesCollection = db.collection('Services')
+    const BookingsCollection = db.collection('Bookings')
 
+
+    // ====================================== Bookings ========================================== //
     //add one services
     app.post('/services', async(req, res) =>{
         const data = req.body
@@ -48,7 +51,7 @@ async function run() {
         const objectId = new ObjectId(id);
         const filter = {_id: objectId};
         const update= { $set: data}
-        const result = servicesCollection.updateOne(filter, update)
+        const result = await servicesCollection.updateOne(filter, update)
         res.send(result)
     })
     //get one services
@@ -74,6 +77,24 @@ async function run() {
       const result = await servicesCollection.deleteOne({_id: new ObjectId(id)})
       res.send(result)
     }) 
+
+    
+    // ====================================== Bookings ========================================== //
+    app.post('/booking', async(req, res) =>{
+        const data = req.body
+        // console.log(data);
+        const result = await BookingsCollection.insertOne(data);
+        res.send(result)
+    })
+
+    // get my booked data by email
+    app.post('/my-booked', async (req, res) => {
+      const { email } = req.body;
+      console.log(email); 
+      const result = await BookingsCollection.find({ email }).toArray();
+      res.send(result);
+    });
+
 
     await client.db("admin").command({ ping: 1 });
     console.log(" Connected to MongoDB");
