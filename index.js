@@ -90,13 +90,60 @@ async function run() {
     // get my booked data by email
     app.post('/my-booked', async (req, res) => {
       const { email } = req.body;
-      console.log(email); 
+      // console.log(email); 
       const result = await BookingsCollection.find({ email }).toArray();
       res.send(result);
     });
 
+    // delete booked data with id
+    app.delete('/bookings/:id', async (req, res) => {
+      const id = req.params.id;
+      try {
+        const result = await BookingsCollection.deleteOne({ _id: new ObjectId(id) });
+        res.send(result);
+      } catch (err) {
+        console.error("Delete failed:", err);
+        res.status(500).send({ error: "Failed to delete booking" });
+      }
+    });
 
-    await client.db("admin").command({ ping: 1 });
+
+
+// Add review to service
+app.post('/bookings/review', async (req, res) => {
+  const review = req.body;
+  const serviceId = review.serviceId
+  console.log(serviceId);
+
+  try { 
+    // Validate service exists
+    const result = await servicesCollection.findOne({_id: new ObjectId(serviceId)})
+    if (!result) {
+      return res.status(404).send({ error: "Service not found" });
+    }
+
+    // console.log(result);
+
+   // Update service with new review
+    const filter = { _id: new ObjectId(serviceId) };
+    const update = {
+      $push: {
+        reviews: review,
+      },
+      $inc: {
+        rating: 1,
+      },
+    };
+
+    const results = await servicesCollection.updateOne(filter, update);
+    res.send(results);
+  } catch (err) {
+    // console.error("Review insert failed:", err);
+    res.status(500).send({ error: "Failed to submit review" });
+  }
+});
+
+    await client.db("admin").command({ veping: 1 });
     console.log(" Connected to MongoDB");
   } catch (err) {
     console.error("MongoDB connection error:", err);
@@ -108,7 +155,7 @@ run().catch(console.dir);
 // Test route
 app.get("/", (req, res) => {
   res.send("The server is running");
-});
+}); 
 
 // Start server
 app.listen(port, () => {
