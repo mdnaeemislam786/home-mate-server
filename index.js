@@ -26,7 +26,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const db = client.db('HomeMateDB')
     const servicesCollection = db.collection('Services')
     const BookingsCollection = db.collection('Bookings')
@@ -80,7 +80,6 @@ async function run() {
     //search api 
     app.post('/services/search', async (req, res) => {
       const query = req.body.query || "";
-
       try {
         const result = await servicesCollection
           .find({ serviceName: { $regex: query, $options: "i" } })
@@ -104,8 +103,6 @@ async function run() {
       }
     });
 
-
-    
     // ====================================== Bookings ========================================== //
     app.post('/booking', async(req, res) =>{
         const data = req.body
@@ -134,43 +131,35 @@ async function run() {
       }
     });
 
+    // Add review to service
+    app.post('/bookings/review', async (req, res) => {
+      const review = req.body;
+      const serviceId = review.serviceId
+      console.log(serviceId);
+      try { 
+        // Validate service exists
+        const result = await servicesCollection.findOne({_id: new ObjectId(serviceId)})
+        if (!result) {
+          return res.status(404).send({ error: "Service not found" });
+        }
+      // Update service with new review
+        const filter = { _id: new ObjectId(serviceId) };
+        const update = {
+          $push: {
+            review,
+          },
+          $inc: {
+            rating: 1,
+          },
+        };
+        const results = await servicesCollection.updateOne(filter, update);
+        res.send(results);
+      } catch (err) {
+        res.status(500).send({ error: "Failed to submit review" });
+      }
+    });
 
-
-// Add review to service
-app.post('/bookings/review', async (req, res) => {
-  const review = req.body;
-  const serviceId = review.serviceId
-  console.log(serviceId);
-
-  try { 
-    // Validate service exists
-    const result = await servicesCollection.findOne({_id: new ObjectId(serviceId)})
-    if (!result) {
-      return res.status(404).send({ error: "Service not found" });
-    }
-
-    // console.log(result);
-
-   // Update service with new review
-    const filter = { _id: new ObjectId(serviceId) };
-    const update = {
-      $push: {
-        review,
-      },
-      $inc: {
-        rating: 1,
-      },
-    };
-
-    const results = await servicesCollection.updateOne(filter, update);
-    res.send(results);
-  } catch (err) {
-    // console.error("Review insert failed:", err);
-    res.status(500).send({ error: "Failed to submit review" });
-  }
-});
-
-    await client.db("admin").command({ veping: 1 });
+    // await client.db("admin").command({ veping: 1 });
     console.log(" Connected to MongoDB");
   } catch (err) {
     console.error("MongoDB connection error:", err);
