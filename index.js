@@ -77,6 +77,33 @@ async function run() {
       const result = await servicesCollection.deleteOne({_id: new ObjectId(id)})
       res.send(result)
     }) 
+    //search api 
+    app.post('/services/search', async (req, res) => {
+      const query = req.body.query || "";
+
+      try {
+        const result = await servicesCollection
+          .find({ serviceName: { $regex: query, $options: "i" } })
+          .toArray();
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: "Search failed" });
+      }
+    });
+
+    // filter api 
+    app.post('/services/filter', async (req, res) => {
+      const min = (req.body.min) || 0;
+      const max = (req.body.max) || Infinity;
+      console.log(min, max);
+      try {
+        const result = await servicesCollection.find({ price: { $gte: min, $lte: max } }).toArray();
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: "Price filter failed" });
+      }
+    });
+
 
     
     // ====================================== Bookings ========================================== //
@@ -128,7 +155,7 @@ app.post('/bookings/review', async (req, res) => {
     const filter = { _id: new ObjectId(serviceId) };
     const update = {
       $push: {
-        reviews: review,
+        review,
       },
       $inc: {
         rating: 1,
